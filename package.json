@@ -1,0 +1,52 @@
+{
+  "name": "ts-mongo-orm",
+  "version": "0.0.1",
+  "description": "A MongoDB ORM inspired by ActiveRecord.",
+  "main": "built/index.js",
+  "types": "built/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tylerc/ts-mongo-orm.git"
+  },
+  "keywords": [
+    "mongo",
+    "mongodb",
+    "orm",
+    "active",
+    "record",
+    "activerecord",
+    "db",
+    "node",
+    "ts",
+    "typescript"
+  ],
+  "author": "Tyler Church",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tylerc/ts-mongo-orm/issues"
+  },
+  "homepage": "https://github.com/tylerc/ts-mongo-orm#readme",
+  "peerDependencies": {
+    "@types/hapi__joi": "15.x",
+    "@types/mongodb": "3.x",
+    "@hapi/joi": "15.x",
+    "mongodb": "3.x"
+  },
+  "devDependencies": {
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {
+    "@hapi/joi": "^15.0.3",
+    "@types/mongodb": "^3.1.28",
+    "mongodb": "^3.2.7"
+  },
+  "files": [
+    "*.js",
+    "*.map",
+    "*.d.ts"
+  ]
+}
