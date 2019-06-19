@@ -30,7 +30,7 @@ export class OrmGlobalHelpers {
   }
 
   static async DatabaseConnectionsClose(): Promise<any> {
-    for (let [_, client] of this.DatabaseConnections) {
+    for (let [_, client] of OrmGlobalHelpers.DatabaseConnections) {
       await new Promise(resolve => client.close(resolve));
     }
   }
