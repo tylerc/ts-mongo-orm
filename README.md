@@ -24,10 +24,19 @@ Note that the following peer dependencies are required:
 Example Usage
 -------------
 
+See [the ts-mongo-orm-example repo](https://github.com/tylerc/ts-mongo-orm-example) for an example program you can clone
+and run.
+
+Below are some selected examples.
+
 Connect to the database:
 
 ```ts
-await DatabaseConnectDefault("mongodb://localhost:27017/test");
+import {DatabaseConnectDefault} from "ts-mongo-orm";
+
+(async () => {
+    await DatabaseConnectDefault("mongodb://localhost:27017/test");
+})();
 ```
 
 Create define a `User` `ActiveRecord`:
@@ -35,7 +44,7 @@ Create define a `User` `ActiveRecord`:
 ```ts
 import {ActiveRecord, Document, Field, ObjectIdField} from "ts-mongo-orm";
 import {ObjectId} from "mongodb";
-import * as Joi from "joi";
+import * as Joi from "@hapi/joi";
 
 @Document
 class User {
@@ -84,7 +93,7 @@ In the above example, there is no additional model logic, so the `User` class is
 class UserModel extends User {
   // This will appear on the active record object but will not get saved to the database:
   get nameAndEmail() {
-    return this.name + this.email;
+    return this.name + " " + this.email;
   }
 }
 
@@ -98,16 +107,16 @@ import {UserActiveRecord} from "./user";
 
 export async function userFindAndLog(email: string) {
     // This query is fully type-checked:
-    let user = await UserActiveRecord.findOne({email: "someone@example.com"});
+    let user = await UserActiveRecord.findOne({email: email});
     
     if (user) {
         console.log(user.nameAndEmail);
     }
 }
 
-export function userDeleteIfFound(email: string) {
+export async function userDeleteIfFound(email: string) {
     // This query is fully type-checked:
-    let user = await UserActiveRecord.findOne({email: "someone@example.com"});
+    let user = await UserActiveRecord.findOne({email: email});
 
     if (user) {
         console.log("Deleting " + user._id + "...");
