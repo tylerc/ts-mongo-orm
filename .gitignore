@@ -2,5 +2,4 @@
 *.map
 *.d.ts
 node_modules
-built
 .idea

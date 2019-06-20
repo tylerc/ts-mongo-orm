@@ -1,9 +1,9 @@
 {
   "name": "ts-mongo-orm",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A MongoDB ORM inspired by ActiveRecord.",
-  "main": "built/index.js",
-  "types": "built/index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"
@@ -37,12 +37,11 @@
     "mongodb": "3.x"
   },
   "devDependencies": {
+    "@types/hapi__joi": "15.x",
+    "@types/mongodb": "3.x",
+    "@hapi/joi": "15.x",
+    "mongodb": "3.x",
     "typescript": "^3.5.2"
-  },
-  "dependencies": {
-    "@hapi/joi": "^15.0.3",
-    "@types/mongodb": "^3.1.28",
-    "mongodb": "^3.2.7"
   },
   "files": [
     "*.js",
