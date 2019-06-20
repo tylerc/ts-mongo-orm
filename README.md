@@ -156,7 +156,7 @@ This package will not do these things:
 - Support for validation libraries other than `joi`. Pull requests making this optional are welcome.
 - Create typings for an existing DB automatically.
 
-It's not that any of these things are bad, just that they are either outside the scope of this package, or requires more
+It's not that any of these things are bad, just that they are either outside the scope of this package, or require more
 time than I have.
 
 Issues and Pull Requests
@@ -171,7 +171,7 @@ Future Work
 -----------
 
 - [ ] A mechanism for doing type-safe updates and queries on nested fields (e.g. a type safe `{$set: {"a.b.c": 123}}`)
-- [ ] Lifecycle hooks (e.g. OnLoad, AfterInit, BeforeUpdate, BeforeInsert, etc.
+- [ ] Lifecycle hooks (e.g. OnLoad, AfterInit, BeforeUpdate, BeforeInsert, etc.)
 - [ ] Easy optional mechanism for running validations when _reading_ from the database.
 
 License
