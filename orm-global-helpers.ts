@@ -10,11 +10,11 @@ export class OrmGlobalHelpers {
   static DatabaseConnections = new Map<string, MongoClient>();
   static DatabaseConnectionCallbacks = new Map<string, (() => any)[]>();
 
-  static async DatabaseConnectDefault(uri: string = "mongodb://localhost:27017/test", options?: MongoClientOptions): Promise<any> {
+  static async DatabaseConnectDefault(uri: string = "mongodb://localhost:27017/test", options?: MongoClientOptions): Promise<MongoClient> {
     return OrmGlobalHelpers.DatabaseConnect("default", uri, options);
   }
 
-  static async DatabaseConnect(name: string, uri: string, options?: MongoClientOptions): Promise<any> {
+  static async DatabaseConnect(name: string, uri: string, options?: MongoClientOptions): Promise<MongoClient> {
     if (OrmGlobalHelpers.DatabaseConnections.has(name)) {
       const existingConnection = OrmGlobalHelpers.DatabaseConnections.get(name) as MongoClient;
 
@@ -22,7 +22,7 @@ export class OrmGlobalHelpers {
         await existingConnection.connect();
       }
 
-      return;
+      return existingConnection;
     }
 
     if (!options) {
@@ -38,6 +38,8 @@ export class OrmGlobalHelpers {
       callbacks.forEach(c => c());
       OrmGlobalHelpers.DatabaseConnectionCallbacks.delete(name);
     }
+
+    return client;
   }
 
   static async DatabaseConnectionsClose(): Promise<any> {
