@@ -15,6 +15,16 @@ export class OrmGlobalHelpers {
   }
 
   static async DatabaseConnect(name: string, uri: string, options?: MongoClientOptions): Promise<any> {
+    if (OrmGlobalHelpers.DatabaseConnections.has(name)) {
+      const existingConnection = OrmGlobalHelpers.DatabaseConnections.get(name) as MongoClient;
+
+      if (!existingConnection.isConnected()) {
+        await existingConnection.connect();
+      }
+
+      return;
+    }
+
     if (!options) {
       options = {useNewUrlParser: true};
     }
@@ -26,6 +36,7 @@ export class OrmGlobalHelpers {
     let callbacks = OrmGlobalHelpers.DatabaseConnectionCallbacks.get(name);
     if (callbacks) {
       callbacks.forEach(c => c());
+      OrmGlobalHelpers.DatabaseConnectionCallbacks.delete(name);
     }
   }
 
