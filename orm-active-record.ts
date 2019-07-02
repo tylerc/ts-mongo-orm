@@ -44,9 +44,9 @@ export class ActiveRecord {
         (name) => {
           if (documentConstructor.prototype[name]) {
             console.warn("ActiveRecord.for was passed a document class that contains a field or " +
-                "method named " + name + ". This will be shadowed by ActiveRecord, and your field/method will not " +
-                "be used. This was likely an unintentional mistake on your part. Please use a different name to " +
-                "avoid this conflict."
+              "method named " + name + ". This will be shadowed by ActiveRecord, and your field/method will not " +
+              "be used. This was likely an unintentional mistake on your part. Please use a different name to " +
+              "avoid this conflict."
             );
             console.warn("The document class in question is:", documentConstructor);
           }
