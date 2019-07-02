@@ -40,6 +40,28 @@ export class ActiveRecord {
     modelConstructor: ModelClass,
     databaseConnectionName: string = "default"
   ) {
+    ["save", "delete", "reload", "validate", "isValid", "isPersisted", "toJSON", "_document", "_isPersisted"].forEach(
+        (name) => {
+          if (documentConstructor.prototype[name]) {
+            console.warn("ActiveRecord.for was passed a document class that contains a field or " +
+                "method named " + name + ". This will be shadowed by ActiveRecord, and your field/method will not " +
+                "be used. This was likely an unintentional mistake on your part. Please use a different name to " +
+                "avoid this conflict."
+            );
+            console.warn("The document class in question is:", documentConstructor);
+          }
+
+          if (modelConstructor.prototype[name]) {
+            console.warn("ActiveRecord.for was passed a model class that contains a field or " +
+              "method named " + name + ". This will be shadowed by ActiveRecord, and your field/method will not " +
+              "be used. This was likely an unintentional mistake on your part. Please use a different name to " +
+              "avoid this conflict."
+            );
+            console.warn("The model class in question is:", modelConstructor);
+          }
+      }
+    );
+
     let prelude = ActiveRecord.enhanceWithInstanceMethods<DocumentClass, ModelClass>(documentConstructor, modelConstructor, databaseConnectionName);
     return ActiveRecord.enhanceWithStaticMethods<typeof prelude>(prelude);
   }
