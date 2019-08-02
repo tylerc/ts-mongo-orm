@@ -40,7 +40,7 @@ export type StrictCondition<T, P extends keyof T> = {
 };
 
 export type StrictFilterQuery<DocumentInstance> = {
-  [P in keyof DocumentInstance]?: DocumentInstance[P] | StrictCondition<DocumentInstance, P>;
+  [P in keyof DocumentInstance]?: DocumentInstance[P] | (DocumentInstance[P] extends Array<any> ? DocumentInstance[P][number] : never) | StrictCondition<DocumentInstance, P>;
 };
 
 // TODO: 1. We need some mechanism by which we can do type-safe updates and queries based on nested fields
