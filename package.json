@@ -1,6 +1,6 @@
 {
   "name": "ts-mongo-orm",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "A MongoDB ORM inspired by ActiveRecord.",
   "main": "index.js",
   "types": "index.d.ts",
@@ -32,16 +32,14 @@
   "homepage": "https://github.com/tylerc/ts-mongo-orm#readme",
   "peerDependencies": {
     "@types/hapi__joi": "15.x",
-    "@types/mongodb": "3.x",
     "@hapi/joi": "15.x",
-    "mongodb": "3.x"
+    "typescript": ">=4.5.5"
   },
   "devDependencies": {
     "@types/hapi__joi": "15.x",
-    "@types/mongodb": "3.x",
     "@hapi/joi": "15.x",
-    "mongodb": "3.x",
-    "typescript": "^3.5.2"
+    "mongodb": ">=4.x",
+    "typescript": ">=4.5.5"
   },
   "files": [
     "*.js",

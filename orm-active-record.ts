@@ -1,32 +1,44 @@
 import {
-  Collection, CollectionInsertManyOptions, CollectionInsertOneOptions, CollStats, CommandCursor,
-  CommonOptions,
+  Collection,
+  CollStats,
   Db,
-  DeleteWriteOpResultObject,
-  FindAndModifyWriteOpResultObject,
-  FindOneAndDeleteOption,
-  FindOneAndReplaceOption, FindOneAndUpdateOption,
-  FindOneOptions, GeoHaystackSearchOptions,
-  IndexOptions, InsertOneWriteOpResult, InsertWriteOpResult,
+  DeleteResult,
   MongoClient,
-  MongoCountPreferences,
-  ReadPreference, ReplaceOneOptions, ReplaceWriteOpResult, UpdateManyOptions, UpdateOneOptions,
-  UpdateWriteOpResult
+  ReadPreference,
+  UpdateResult,
+  Document,
+  CountOptions,
+  CreateIndexesOptions,
+  DeleteOptions,
+  FindOptions,
+  FindOneAndDeleteOptions,
+  DropIndexesOptions,
+  FindOneAndReplaceOptions,
+  FindOneAndUpdateOptions,
+  BulkWriteOptions,
+  InsertManyResult,
+  InsertOneResult,
+  ListIndexesCursor,
+  ReplaceOptions,
+  UpdateOptions,
+  CountDocumentsOptions,
+  DistinctOptions,
+  EstimatedDocumentCountOptions, ListIndexesOptions, UpdateFilter, InsertOneOptions, CollStatsOptions
 } from "mongodb";
 import * as Joi from "@hapi/joi";
 import {StrictFilterQuery, StrictIndexSpecification, StrictUpdateQuery} from "./orm-strict-mongodb-types";
-import {TypeSafeBuilder} from "./orm-type-safe-builder";
 import {ActiveRecordCursor} from "./orm-active-record-cursor";
 import {OrmGlobalHelpers} from "./orm-global-helpers";
-import {OrmDocumentClass} from "./orm-decorators";
+import { OrmDocumentClass, OrmDocumentInstance } from "./orm-decorators";
 
+type ModifyResult<BaseClassInstance> = { value: BaseClassInstance | null, _document?: any, lastErrorObject: any, ok: 0 | 1 };
 
-export interface ActiveRecordInstance<DocumentType> {
+export interface ActiveRecordInstance<DocumentType extends Document> {
   _document: DocumentType;
   _isPersisted: boolean;
 
-  save(): Promise<UpdateWriteOpResult>;
-  delete(): Promise<DeleteWriteOpResultObject>;
+  save(): Promise<UpdateResult | Document>;
+  delete(): Promise<DeleteResult>;
   reload(): Promise<void>;
   validate(): Joi.ValidationErrorItem[];
   isValid(): boolean;
@@ -210,8 +222,8 @@ export class ActiveRecord {
         _document: { _id: any };
         _isPersisted: boolean;
 
-        save(): Promise<UpdateWriteOpResult>;
-        delete(): Promise<DeleteWriteOpResultObject>;
+        save(): Promise<UpdateResult | Document>;
+        delete(): Promise<DeleteResult>;
         reload(): Promise<void>;
         validate(): Joi.ValidationErrorItem[];
         isValid(): boolean;
@@ -224,107 +236,134 @@ export class ActiveRecord {
       collection: Collection;
       validators: Joi.SchemaMap;
     }>(klass: BaseClass): BaseClass & {
-    builder(): TypeSafeBuilder<InstanceType<BaseClass>['_document']>;
     create(doc: InstanceType<BaseClass>['_document']): InstanceType<BaseClass>;
-    createAndSave(doc: InstanceType<BaseClass>['_document']): Promise<{record: InstanceType<BaseClass>, result: UpdateWriteOpResult}>
-    countDocuments(query: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: MongoCountPreferences): Promise<number>;
-    createIndex(field: keyof InstanceType<BaseClass>['_document'], option?: IndexOptions): Promise<string>;
+    createAndSave(doc: InstanceType<BaseClass>['_document']): Promise<{record: InstanceType<BaseClass>, result: UpdateResult | Document}>
+    countDocuments(query: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: CountOptions): Promise<number>;
+    createIndex(field: keyof InstanceType<BaseClass>['_document'], option?: CreateIndexesOptions): Promise<string>;
     createIndexes(indexSpecs: StrictIndexSpecification<InstanceType<BaseClass>['_document']>[]): Promise<any>;
-    deleteMany(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: CommonOptions): Promise<DeleteWriteOpResultObject>;
-    deleteOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: CommonOptions & { bypassDocumentValidation?: boolean }): Promise<DeleteWriteOpResultObject>;
+    deleteMany(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: DeleteOptions): Promise<DeleteResult>;
+    deleteOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: DeleteOptions & { bypassDocumentValidation?: boolean }): Promise<DeleteResult>;
     distinct<Key extends Extract<keyof InstanceType<BaseClass>['_document'], string>>(
       key: Key,
       query: StrictFilterQuery<InstanceType<BaseClass>['_document']>,
       options?: { readPreference?: ReadPreference | string, maxTimeMS?: number }
     ): Promise<InstanceType<BaseClass>['_document'][Key][]>;
     drop(): Promise<any>;
-    dropIndex(indexName: string, options?: CommonOptions & { maxTimeMS?: number }): Promise<any>;
+    dropIndex(indexName: string, options?: DropIndexesOptions): Promise<any>;
     dropIndexes(options?: { maxTimeMS?: number }): Promise<any>;
-    estimatedDocumentCount(query: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: MongoCountPreferences): Promise<number>;
+    estimatedDocumentCount(options?: EstimatedDocumentCountOptions): Promise<number>;
     find(query: StrictFilterQuery<InstanceType<BaseClass>['_document']>): ActiveRecordCursor<InstanceType<BaseClass>>;
     findAll(): Promise<InstanceType<BaseClass>[]>;
-    findOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: FindOneOptions): Promise<InstanceType<BaseClass> | null>;
-    findOneAndDelete(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: FindOneAndDeleteOption): Promise<FindAndModifyWriteOpResultObject<InstanceType<BaseClass>>>;
-    findOneAndReplace(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, replacement: InstanceType<BaseClass>['_document'], options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject<InstanceType<BaseClass>>>;
-    findOneAndUpdate(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, update: StrictUpdateQuery<InstanceType<BaseClass>['_document']> | InstanceType<BaseClass>['_document'], options?: FindOneAndUpdateOption): Promise<FindAndModifyWriteOpResultObject<InstanceType<BaseClass>>>;
-    geoHaystackSearch(x: number, y: number, options?: GeoHaystackSearchOptions): Promise<InstanceType<BaseClass>[]>;
+    findOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: FindOptions): Promise<InstanceType<BaseClass> | null>;
+    findOneAndDelete(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, options?: FindOneAndDeleteOptions): Promise<ModifyResult<InstanceType<BaseClass>>>;
+    findOneAndReplace(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, replacement: InstanceType<BaseClass>['_document'], options?: FindOneAndReplaceOptions): Promise<ModifyResult<InstanceType<BaseClass>>>;
+    // TODO: 1. Can't get the types to work out correctly on for MongoDB v4:
+    // findOneAndUpdate(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, update: UpdateFilter<InstanceType<BaseClass>['_document']>, options?: FindOneAndUpdateOptions): Promise<ModifyResult<InstanceType<BaseClass>>>;
     indexes(): Promise<any>;
     indexExists(indexes: string | string[]): Promise<boolean>;
     indexInformation(): Promise<any>;
-    insertMany(docs: InstanceType<BaseClass>['_document'][], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult>;
-    insertOne(doc: InstanceType<BaseClass>['_document'], options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult>;
+    insertMany(docs: InstanceType<BaseClass>['_document'][], options?: BulkWriteOptions): Promise<InsertManyResult>;
+    insertOne(doc: InstanceType<BaseClass>['_document'], options?: BulkWriteOptions): Promise<InsertOneResult>;
     isCapped(): Promise<any>;
-    listIndexes(options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor;
+    listIndexes(options?: { batchSize?: number, readPreference?: ReadPreference | string }): ListIndexesCursor;
     options(): Promise<any>;
-    reIndex(): Promise<any>;
-    replaceOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, doc: InstanceType<BaseClass>['_document'], options?: ReplaceOneOptions): Promise<ReplaceWriteOpResult>;
+    replaceOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, doc: InstanceType<BaseClass>['_document'], options?: ReplaceOptions): Promise<UpdateResult | Document>;
     stats(options?: { scale: number }): Promise<CollStats>;
-    updateMany(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, update: StrictUpdateQuery<InstanceType<BaseClass>['_document']>, options?: UpdateManyOptions): Promise<UpdateWriteOpResult>;
-    updateOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, update: StrictUpdateQuery<InstanceType<BaseClass>['_document']>, options?: UpdateOneOptions): Promise<UpdateWriteOpResult>;
+    // TODO: 1. Can't get the types to work out correctly on for MongoDB v4:
+    // updateMany(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, update: StrictUpdateQuery<InstanceType<BaseClass>['_document']>, options?: UpdateOptions): Promise<UpdateResult | Document>;
+    updateOne(filter: StrictFilterQuery<InstanceType<BaseClass>['_document']>, update: StrictUpdateQuery<InstanceType<BaseClass>['_document']>, options?: UpdateOptions): Promise<UpdateResult | Document>;
   } {
     type BaseClassInstance = InstanceType<BaseClass>;
     type DocumentInstance = BaseClassInstance['_document'];
 
     return class ActiveRecordForModel extends klass {
-      static builder(): TypeSafeBuilder<DocumentInstance> {
-        return new TypeSafeBuilder();
-      }
-
       static create(doc: DocumentInstance): BaseClassInstance {
         let activeRecord: BaseClassInstance = new (ActiveRecordForModel as any)();
         activeRecord._document = doc;
         return activeRecord;
       }
 
-      static async createAndSave(doc: DocumentInstance): Promise<{record: BaseClassInstance, result: UpdateWriteOpResult}> {
+      static async createAndSave(doc: DocumentInstance): Promise<{record: BaseClassInstance, result: UpdateResult | Document}> {
         let activeRecord: BaseClassInstance = new (ActiveRecordForModel as any)();
         activeRecord._document = doc;
         let result = await activeRecord.save();
         return {record: activeRecord, result};
       }
 
-      static countDocuments(query: StrictFilterQuery<DocumentInstance>, options?: MongoCountPreferences): Promise<number> {
-        return ActiveRecordForModel.collection.countDocuments(query, options);
+      static countDocuments(query: StrictFilterQuery<DocumentInstance>, options?: CountDocumentsOptions): Promise<number> {
+        if (options) {
+          return ActiveRecordForModel.collection.countDocuments(query, options);
+        } else {
+          return ActiveRecordForModel.collection.countDocuments(query);
+        }
       }
 
-      static createIndex(field: keyof DocumentInstance, option?: IndexOptions): Promise<string> {
-        return ActiveRecordForModel.collection.createIndex(field, option);
+      static createIndex(field: keyof DocumentInstance, option?: CreateIndexesOptions): Promise<string> {
+        if (option) {
+          return ActiveRecordForModel.collection.createIndex(field as string, option);
+        } else {
+          return ActiveRecordForModel.collection.createIndex(field as string);
+        }
       }
 
       static createIndexes(indexSpecs: StrictIndexSpecification<DocumentInstance>[]): Promise<any> {
         return ActiveRecordForModel.collection.createIndexes(indexSpecs);
       }
 
-      static deleteMany(filter: StrictFilterQuery<DocumentInstance>, options?: CommonOptions): Promise<DeleteWriteOpResultObject> {
-        return ActiveRecordForModel.collection.deleteMany(filter, options);
+      static deleteMany(filter: StrictFilterQuery<DocumentInstance>, options?: DeleteOptions): Promise<DeleteResult> {
+        if (options) {
+          return ActiveRecordForModel.collection.deleteMany(filter, options);
+        } else {
+          return ActiveRecordForModel.collection.deleteMany(filter);
+        }
       }
 
-      static deleteOne(filter: StrictFilterQuery<DocumentInstance>, options?: CommonOptions & { bypassDocumentValidation?: boolean }): Promise<DeleteWriteOpResultObject> {
-        return ActiveRecordForModel.collection.deleteOne(filter, options);
+      static deleteOne(filter: StrictFilterQuery<DocumentInstance>, options?: DeleteOptions): Promise<DeleteResult> {
+        if (options) {
+          return ActiveRecordForModel.collection.deleteOne(filter, options);
+        } else {
+          return ActiveRecordForModel.collection.deleteOne(filter);
+        }
       }
 
       static distinct<Key extends Extract<keyof DocumentInstance, string>>(
         key: Key,
         query: StrictFilterQuery<DocumentInstance>,
-        options?: { readPreference?: ReadPreference | string, maxTimeMS?: number }
+        options?: DistinctOptions
       ): Promise<DocumentInstance[Key][]> {
-        return ActiveRecordForModel.collection.distinct(key, query, options);
+        if (options) {
+          return ActiveRecordForModel.collection.distinct(key, query, options);
+        } else {
+          return ActiveRecordForModel.collection.distinct(key, query);
+        }
       }
 
       static drop() {
         return ActiveRecordForModel.collection.drop();
       }
 
-      static dropIndex(indexName: string, options?: CommonOptions & { maxTimeMS?: number }): Promise<any> {
-        return ActiveRecordForModel.collection.dropIndex(indexName, options);
+      static dropIndex(indexName: string, options?: DropIndexesOptions): Promise<any> {
+        if (options) {
+          return ActiveRecordForModel.collection.dropIndex(indexName, options);
+        } else {
+          return ActiveRecordForModel.collection.dropIndex(indexName);
+        }
       }
 
-      static dropIndexes(options?: { maxTimeMS?: number }): Promise<any> {
-        return ActiveRecordForModel.collection.dropIndexes(options);
+      static dropIndexes(options?: DropIndexesOptions): Promise<any> {
+        if (options) {
+          return ActiveRecordForModel.collection.dropIndexes(options);
+        } else {
+          return ActiveRecordForModel.collection.dropIndexes();
+        }
       }
 
-      static estimatedDocumentCount(query: StrictFilterQuery<DocumentInstance>, options?: MongoCountPreferences): Promise<number> {
-        return ActiveRecordForModel.collection.estimatedDocumentCount(query, options);
+      static estimatedDocumentCount(options?: EstimatedDocumentCountOptions): Promise<number> {
+        if (options) {
+          return ActiveRecordForModel.collection.estimatedDocumentCount(options);
+        } else {
+          return ActiveRecordForModel.collection.estimatedDocumentCount();
+        }
       }
 
       static find(query: StrictFilterQuery<DocumentInstance>): ActiveRecordCursor<BaseClassInstance> {
@@ -342,7 +381,7 @@ export class ActiveRecord {
         });
       }
 
-      static async findOne(filter: StrictFilterQuery<DocumentInstance>, options: FindOneOptions = {}): Promise<BaseClassInstance | null> {
+      static async findOne(filter: StrictFilterQuery<DocumentInstance>, options: FindOptions = {}): Promise<BaseClassInstance | null> {
         let result = await ActiveRecordForModel.collection.findOne(filter, options);
 
         if (!result) {
@@ -356,51 +395,42 @@ export class ActiveRecord {
         }
       }
 
-      static async findOneAndDelete(filter: StrictFilterQuery<DocumentInstance>, options?: FindOneAndDeleteOption): Promise<FindAndModifyWriteOpResultObject<BaseClassInstance>> {
+      static async findOneAndDelete(filter: StrictFilterQuery<DocumentInstance>, options: FindOneAndDeleteOptions = {}): Promise<ModifyResult<BaseClassInstance>> {
         let result = await ActiveRecordForModel.collection.findOneAndDelete(filter, options);
         if (result.value) {
-          let activeRecord = new ActiveRecordForModel();
+          let activeRecord = new ActiveRecordForModel() as BaseClassInstance;
           activeRecord._document = result.value;
           activeRecord._isPersisted = false;
-          result.value = activeRecord;
+          return { value: activeRecord, lastErrorObject: result.lastErrorObject, ok: result.ok, _document: result.value };
         }
 
-        return result;
+        return { value: null, lastErrorObject: result.lastErrorObject, ok: result.ok, _document: result.value };
       }
 
-      static async findOneAndReplace(filter: StrictFilterQuery<DocumentInstance>, replacement: DocumentInstance, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject<BaseClassInstance>> {
+      static async findOneAndReplace(filter: StrictFilterQuery<DocumentInstance>, replacement: DocumentInstance, options: FindOneAndReplaceOptions = {}): Promise<ModifyResult<BaseClassInstance>> {
         let result = await ActiveRecordForModel.collection.findOneAndReplace(filter, replacement, options);
         if (result.value) {
-          let activeRecord = new ActiveRecordForModel();
+          let activeRecord = new ActiveRecordForModel() as BaseClassInstance;
           activeRecord._document = result.value;
-          activeRecord._isPersisted = !(options && options.returnOriginal);
-          result.value = activeRecord;
+          activeRecord._isPersisted = !(options && options.returnDocument === 'before');
+          return { value: activeRecord, lastErrorObject: result.lastErrorObject, ok: result.ok, _document: result.value };
         }
 
-        return result;
+        return { value: null, lastErrorObject: result.lastErrorObject, ok: result.ok, _document: result.value };
       }
 
-      static async findOneAndUpdate(filter: StrictFilterQuery<DocumentInstance>, update: StrictUpdateQuery<DocumentInstance> | DocumentInstance, options?: FindOneAndUpdateOption): Promise<FindAndModifyWriteOpResultObject<BaseClassInstance>> {
-        let result = await ActiveRecordForModel.collection.findOneAndUpdate(filter, update, options);
-        if (result.value) {
-          let activeRecord = new ActiveRecordForModel();
-          activeRecord._document = result.value;
-          activeRecord._isPersisted = !(options && options.returnOriginal);
-          result.value = activeRecord;
-        }
-
-        return result;
-      }
-
-      static async geoHaystackSearch(x: number, y: number, options?: GeoHaystackSearchOptions): Promise<BaseClassInstance[]> {
-        let results: BaseClassInstance['_document'][] = await ActiveRecordForModel.collection.geoHaystackSearch(x, y, options);
-        return results.map((r) => {
-          let activeRecord: BaseClassInstance = new (ActiveRecordForModel as any)();
-          activeRecord._document = r;
-          activeRecord._isPersisted = true;
-          return activeRecord;
-        });
-      }
+      // TODO: 1. Can't get the types to work out correctly on for MongoDB v4:
+      // static async findOneAndUpdate(filter: StrictFilterQuery<DocumentInstance>, update: UpdateFilter<DocumentInstance>, options: FindOneAndUpdateOptions = {}): Promise<ModifyResult<BaseClassInstance>> {
+      //   let result = await ActiveRecordForModel.collection.findOneAndUpdate(filter, update, options);
+      //   if (result.value) {
+      //     let activeRecord = new ActiveRecordForModel();
+      //     activeRecord._document = result.value;
+      //     activeRecord._isPersisted = !(options && options.returnOriginal);
+      //     result.value = activeRecord;
+      //   }
+      //
+      //   return result;
+      // }
 
       static indexes() {
         return ActiveRecordForModel.collection.indexes();
@@ -414,7 +444,7 @@ export class ActiveRecord {
         return ActiveRecordForModel.collection.indexInformation();
       }
 
-      static insertMany(docs: DocumentInstance[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
+      static insertMany(docs: DocumentInstance[], options: BulkWriteOptions = {}): Promise<InsertManyResult> {
         if (ActiveRecordForModel.validators) {
           for (let i = 0; i < docs.length; i++) {
             let doc = docs[i];
@@ -443,7 +473,7 @@ export class ActiveRecord {
         return ActiveRecordForModel.collection.insertMany(docs, options);
       }
 
-      static insertOne(doc: DocumentInstance, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
+      static insertOne(doc: DocumentInstance, options: InsertOneOptions = {}): Promise<InsertOneResult> {
         if (ActiveRecordForModel.validators) {
           let validationResult = Joi.validate(
             doc,
@@ -472,7 +502,7 @@ export class ActiveRecord {
         return ActiveRecordForModel.collection.isCapped();
       }
 
-      static listIndexes(options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor {
+      static listIndexes(options: ListIndexesOptions = {}): ListIndexesCursor {
         return ActiveRecordForModel.collection.listIndexes(options);
       }
 
@@ -480,11 +510,7 @@ export class ActiveRecord {
         return ActiveRecordForModel.collection.options();
       }
 
-      static reIndex() {
-        return ActiveRecordForModel.collection.reIndex();
-      }
-
-      static replaceOne(filter: StrictFilterQuery<DocumentInstance>, doc: DocumentInstance, options?: ReplaceOneOptions): Promise<ReplaceWriteOpResult> {
+      static replaceOne(filter: StrictFilterQuery<DocumentInstance>, doc: DocumentInstance, options: ReplaceOptions = {}): Promise<UpdateResult | Document> {
         if (ActiveRecordForModel.validators) {
           let validationResult = Joi.validate(
             doc,
@@ -509,16 +535,17 @@ export class ActiveRecord {
         return ActiveRecordForModel.collection.replaceOne(filter, doc, options);
       }
 
-      static stats(options?: { scale: number }): Promise<CollStats> {
+      static stats(options: CollStatsOptions = {}): Promise<CollStats> {
         return ActiveRecordForModel.collection.stats(options);
       }
 
-      static updateMany(filter: StrictFilterQuery<DocumentInstance>, update: StrictUpdateQuery<DocumentInstance>, options?: UpdateManyOptions): Promise<UpdateWriteOpResult> {
-        // TODO: 1. Validations on update would be nice (but also would be tricky, maybe just add hooks and let users validate?)
-        return ActiveRecordForModel.collection.updateMany(filter, update, options);
-      }
+      // TODO: 1. Can't get the types to work out correctly on for MongoDB v4:
+      // static updateMany(filter: StrictFilterQuery<DocumentInstance>, update: StrictUpdateQuery<DocumentInstance>, options: UpdateOptions = {}): Promise<UpdateResult | Document> {
+      //   // TODO: 1. Validations on update would be nice (but also would be tricky, maybe just add hooks and let users validate?)
+      //   return ActiveRecordForModel.collection.updateMany(filter, update, options);
+      // }
 
-      static updateOne(filter: StrictFilterQuery<DocumentInstance>, update: StrictUpdateQuery<DocumentInstance>, options?: UpdateOneOptions): Promise<UpdateWriteOpResult> {
+      static updateOne(filter: StrictFilterQuery<DocumentInstance>, update: StrictUpdateQuery<DocumentInstance>, options: UpdateOptions = {}): Promise<UpdateResult | Document> {
         // TODO: 1. Validations on update would be nice (but also would be tricky, maybe just add hooks and let users validate?)
         return ActiveRecordForModel.collection.updateOne(filter, update, options);
       }

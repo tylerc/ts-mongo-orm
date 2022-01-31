@@ -152,7 +152,7 @@ This package will not do these things:
 - Have zero-overhead abstractions. Validation and the ActiveRecord pattern incur some cost by their very nature.
 - Provide a type-safe way of dealing with aggregations. Too much pain for too little gain.
 - Have exhaustive support for various versions of the `mongodb` library. Pull requests that add support for older
-  versions are welcome, but I will focus only on the `3.x` branch of the `mongodb` library.
+  versions are welcome, but I will focus only on the `4.x` branch of the `mongodb` library.
 - Support for validation libraries other than `joi`. Pull requests making this optional are welcome.
 - Create typings for an existing DB automatically.
 
@@ -170,6 +170,9 @@ get merged, as my time to manage issues on this project is limited.
 Future Work
 -----------
 
+- [ ] Updating to the v4.x driver broke some things. Might be worth rethinking how the superstructure of this module
+      works so it's not as fragile to the whims of MongoDB. I'd rather expose the MongoDB API directly somehow, and
+      just transparently provide my niceties on top.
 - [ ] A mechanism for doing type-safe updates and queries on nested fields (e.g. a type safe `{$set: {"a.b.c": 123}}`)
 - [ ] Lifecycle hooks (e.g. OnLoad, AfterInit, BeforeUpdate, BeforeInsert, etc.)
 - [ ] Easy optional mechanism for running validations when _reading_ from the database.

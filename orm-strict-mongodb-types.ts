@@ -1,5 +1,4 @@
 import {Timestamp} from "bson";
-import {IndexSpecification} from "mongodb";
 import {OrmDocumentInstance} from "./orm-decorators";
 
 export type StrictCondition<T, P extends keyof T> = {
@@ -53,12 +52,12 @@ export type StrictUpdateQuery<T> = {
   $set?: Partial<T>;
   $setOnInsert?: Partial<T>;
   $unset?: { [P in keyof T]?: '' | 1 };
-  $rename?: { [P in keyof T]?: string };
-  $currentDate?: {
-    [P in keyof T]?:
-    T[P] extends Date ? (true | { $type: "date"}) :
-      T[P] extends Timestamp ? {$type: "timestamp"} : never
-  };
+  $rename?: { [P in keyof T]: string | never };
+  // $currentDate?: {
+  //   [P in keyof T]?:
+  //   T[P] extends Date ? (true | { $type: "date"}) :
+  //     T[P] extends Timestamp ? {$type: "timestamp"} : never
+  // };
   $addToSet?: { [P in keyof T]?: T[P] extends Array<any> ? (T[P][0] | { $each: T[P] }) : never };
   $pop?: { [P in keyof T]?: T[P] extends Array<any> ? (-1 | 1) : never };
   $pull?: { [P in keyof T]?: T[P] extends Array<any> ? StrictFilterQuery<{_id: any, field: T[P][0]}>['field'] : never };
@@ -67,7 +66,7 @@ export type StrictUpdateQuery<T> = {
   $bit?: { [P in keyof T]?: T[P] extends number ? ({and: number} | {or: number} | {xor: number}) : never };
 };
 
-export interface StrictIndexSpecification<DocumentInstance extends OrmDocumentInstance> extends IndexSpecification {
+export interface StrictIndexSpecification<DocumentInstance extends OrmDocumentInstance> {
   key: {
     [K in keyof DocumentInstance]?: -1 | 1
   }

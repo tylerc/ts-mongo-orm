@@ -1,16 +1,21 @@
-import {CollationDocument, Cursor, CursorCommentOptions, CursorResult, IteratorCallback, ReadPreference} from "mongodb";
+import {
+  CollationOptions, CountOptions, CursorFlag,
+  FindCursor,
+  ReadPreference, SortDirection
+} from "mongodb";
 import {OrmDocumentInstance} from "./orm-decorators";
 import {StrictFilterQuery} from "./orm-strict-mongodb-types";
+import { Document } from "bson";
 
 export class ActiveRecordCursor<
   ActiveRecordForModel extends { _document: OrmDocumentInstance, _isPersisted: boolean }
   > {
   constructor(
     public activeRecordModelConstructor: new(...args: any[]) => ActiveRecordForModel,
-    public normalCursor: Cursor<ActiveRecordForModel['_document']>
+    public normalCursor: FindCursor<ActiveRecordForModel['_document']>
   ) {}
 
-  addCursorFlag(flag: string, value: boolean) {
+  addCursorFlag(flag: CursorFlag, value: boolean) {
     this.normalCursor.addCursorFlag(flag, value);
     return this;
   }
@@ -36,7 +41,7 @@ export class ActiveRecordCursor<
     return this.normalCursor.close();
   }
 
-  collation(value: CollationDocument) {
+  collation(value: CollationOptions) {
     this.normalCursor.collation(value);
     return this;
   }
@@ -46,11 +51,15 @@ export class ActiveRecordCursor<
     return this;
   }
 
-  count(applySkipLimit?: boolean, options?: CursorCommentOptions): Promise<number> {
-    return this.normalCursor.count(applySkipLimit, options);
+  count(options?: CountOptions): Promise<number> {
+    if (options) {
+      return this.normalCursor.count(options);
+    } else {
+      return this.normalCursor.count();
+    }
   }
 
-  explain(): Promise<CursorResult> {
+  explain(): Promise<Document> {
     return this.normalCursor.explain();
   }
 
@@ -59,7 +68,7 @@ export class ActiveRecordCursor<
     return this;
   }
 
-  forEach(iterator: IteratorCallback<ActiveRecordForModel>) {
+  forEach(iterator: (doc: ActiveRecordForModel) => boolean | void) {
     this.normalCursor.forEach((doc: ActiveRecordForModel['_document']) => {
       let activeRecord = new this.activeRecordModelConstructor();
       activeRecord._document = doc;
@@ -78,7 +87,7 @@ export class ActiveRecordCursor<
   }
 
   isClosed() {
-    return this.normalCursor.isClosed();
+    return this.normalCursor.closed;
   }
 
   limit(value: number) {
@@ -98,11 +107,6 @@ export class ActiveRecordCursor<
 
   maxAwaitTimeMS(value: number) {
     this.normalCursor.maxAwaitTimeMS(value);
-    return this;
-  }
-
-  maxScan(maxScan: object) {
-    this.normalCursor.maxScan(maxScan);
     return this;
   }
 
@@ -137,13 +141,8 @@ export class ActiveRecordCursor<
     this.normalCursor.rewind();
   }
 
-  setCursorOption(field: string, value: object) {
-    this.normalCursor.setCursorOption(field, value);
-    return this;
-  }
-
-  setReadPreference(readPreference: string | ReadPreference) {
-    this.normalCursor.setReadPreference(readPreference);
+  setReadPreference(readPreference: ReadPreference) {
+    this.normalCursor = this.normalCursor.withReadPreference(readPreference);
     return this;
   }
 
@@ -152,7 +151,7 @@ export class ActiveRecordCursor<
     return this;
   }
 
-  sort(sorts: { [K in keyof ActiveRecordForModel['_document']]?: -1 | 1 }) {
+  sort<Keys extends  keyof ActiveRecordForModel['_document']>(sorts: { [K in Keys]: SortDirection }) {
     this.normalCursor.sort(sorts);
     return this;
   }
